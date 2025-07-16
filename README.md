@@ -4,11 +4,15 @@ This project demonstrates the function-calling feature of Google's Gemini large 
 
 ## How it Works
 
-The script interacts with the Gemini model and provides it with a tool definition for a function called `get_current_temperature`. When a user asks for the weather in a specific location, the model doesn't directly answer the question. Instead, it recognizes that it needs to use the provided tool and returns a "function call" to the script.
+The project now includes two separate implementations that demonstrate how to interact with the Gemini API using two different libraries: `google-genai` and `openai`.
+
+In both implementations, the script interacts with the Gemini model and provides it with a tool definition for a function called `get_current_temperature`. When a user asks for the weather in a specific location, the model doesn't directly answer the question. Instead, it recognizes that it needs to use the provided tool and returns a "function call" to the script.
 
 The script then executes the `get_current_temperature` function with the arguments provided by the model (the location). This process involves a few key APIs:
 
-1.  **Gemini API (`google-genai`):** The script communicates with the Gemini model using this library. The model interprets the user's request and decides when to call the custom function.
+1.  **Gemini API:** The script communicates with the Gemini model using one of two libraries:
+    *   **`google-genai`:** The official Python library for the Google AI SDK.
+    *   **`openai`:** The popular library for the OpenAI API, which can be configured to work with Gemini's OpenAI-compatible endpoint.
 2.  **Geocoding API (Optional):** To get the latitude and longitude of the given location. The API key for this service is optional, as it allows for unauthenticated requests. However, these are subject to severe throttling, and using an API key allows for a higher number of requests.
 3.  **Open-Meteo API:** To get the current temperature for those coordinates.
 
@@ -16,9 +20,16 @@ Finally, the script prints the result of the function call, which includes the t
 
 ## Dependencies
 
-This project uses `uv` to manage dependencies and run the script. The required Python libraries are:
+This project uses `uv` to manage dependencies and run the scripts. The required Python libraries are specified within each script.
+
+### `gemini-genai.py`
 
 *   `google-genai`: The official Python library for the Google AI SDK.
+*   `requests`: A simple, yet elegant, HTTP library.
+
+### `gemini-openai.py`
+
+*   `openai`: The library for the OpenAI API.
 *   `requests`: A simple, yet elegant, HTTP library.
 
 ## API Keys
@@ -39,17 +50,21 @@ export GEOCODE_API_KEY="YOUR_GEOCODE_API_KEY"
 
 ## How to Run
 
-To run the chatbot, simply use the following command:
+You can run either of the two implementations using the following `make` commands:
 
+To run the `google-genai` implementation:
 ```bash
-make
+make gemini-genai
 ```
 
-This will execute the `gemini-genai.py` script using `uv run`.
+To run the `openai` library implementation:
+```bash
+make gemini-openai
+```
 
 ## Gemini Function Calling
 
-The core of this project is the function-calling feature of the Gemini model. This is implemented through the following components in the `gemini-genai.py` script:
+The core of this project is the function-calling feature of the Gemini model. This is implemented through the following components in both scripts:
 
 *   **`WEATHER_TOOL`:** This is a dictionary that defines the `get_current_temperature` function for the Gemini model. It includes the function's name, a description of what it does, and the parameters it expects (in this case, a `location`).
 

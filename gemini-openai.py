@@ -1,13 +1,11 @@
 # /// script
 # dependencies = [
-#   "google-genai",
+#   "openai",
 #   "requests",
 # ]
 # ///
 
-from google import genai
-from google.genai import types
-
+from openai import OpenAI
 import os
 import requests
 import urllib.parse
@@ -15,6 +13,8 @@ import urllib.parse
 MODEL = "gemini-2.0-flash-lite"
 
 WEATHER_TOOL = {
+    "type": "function",
+    "function": {
         "name": "get_current_temperature",
         "description": "🌡️Gets the current temperature for a given location.",
         "parameters": {
@@ -28,6 +28,7 @@ WEATHER_TOOL = {
             "required": ["location"],
         },
     }
+}
 
 WEATHER_TOOL_INSTRUCTIONS ="\
     Here are the instructions that should be followed when get_current_temperature is invoked: \
@@ -89,33 +90,44 @@ def get_current_temperature(location):
 def main():
     """Executes the flow."""
 
-    client = genai.Client()
-    tools = types.Tool(function_declarations=[WEATHER_TOOL])
-    config = types.GenerateContentConfig(tools=[tools],
-        system_instruction=WEATHER_TOOL_INSTRUCTIONS
+    client = OpenAI(
+        base_url="https://generativelanguage.googleapis.com/v1beta/",
+        api_key=os.environ["GEMINI_API_KEY"],
     )
 
     print("Gemini Chatbot d[o_0]b (type 'exit' to quit)")
     print("=" * 40)
 
     while True:
-        user_input = input("\nYou: ").strip()
+        user_input = input("You: ").strip()
         if user_input.lower() in ("exit", "quit"):
             break
 
-        response = client.models.generate_content(
+        response = client.chat.completions.create(
             model=MODEL,
-            contents=user_input,
-            config=config,
+            messages=[
+            {
+                    "role": "system",
+                    "content": WEATHER_TOOL_INSTRUCTIONS,
+                },
+                {
+                    "role": "user",
+                    "content": user_input,
+                }
+            ],
+            tools=[WEATHER_TOOL],
+            tool_choice="auto",
         )
-        function_call = response.candidates[0].content.parts[0].function_call
-        if function_call:
-            result = get_current_temperature(**function_call.args)
+
+        response_message = response.choices[0].message
+        tool_calls = response_message.tool_calls
+        if tool_calls:
+            result = get_current_temperature(**eval(tool_calls[0].function.arguments))
             chatbot_message = f"""
-                I am going to call {function_call.name} function
-                Function description: {WEATHER_TOOL.get("description")}
+                I am going to call {tool_calls[0].function.name} function
+                Function description: {WEATHER_TOOL["function"]["description"]}
                 {("-" * 45)}
-                Function arguments: {function_call.args}
+                Function arguments: {tool_calls[0].function.arguments}
                 {("-" * 45)}
                 Function execution result: {result}
             """
@@ -123,7 +135,7 @@ def main():
             chatbot_message = f"""
                 No function call found in the response.
                 {("-" * 45)}
-                Model response: {response.text}
+                Model response: {response_message.content}
             """
 
         msg_lines = chatbot_message.splitlines()
