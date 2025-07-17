@@ -1,2 +1,3 @@
 .goose
 tools/__pycache__
+clients/__pycache__

@@ -9,7 +9,7 @@ help: ## Prints help for targets with comments.
 	@cat $(MAKEFILE_LIST) | grep -E '^[a-zA-Z_-]+:.*?## .*$$' | awk 'BEGIN {FS = ":.*?## "}; {printf "$(green)%-30s$(white) %s\n", $$1, $$2}'
 
 gemini-genai: ## Run google-genai library implementation.
-	uv run gemini-genai.py
+	uv run --with 'requests' --with 'google-genai' gemini-chatbot.py --client genai
 
 gemini-openai: ## Run openai library implementation.
-	uv run gemini-openai.py
+	uv run --with 'requests' --with 'openai' gemini-chatbot.py --client openai
