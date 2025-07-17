@@ -18,6 +18,10 @@ The script then executes the `get_current_temperature` function with the argumen
 
 Finally, the script prints the result of the function call, which includes the temperature.
 
+**Date:** July 17, 2025
+
+To improve code organization and reusability, the core logic for the weather tool has been refactored into a separate module. The `get_current_temperature` function, its helper functions, and the detailed instructions for the model are now located in `tools/weather_tool.py`. The main scripts (`gemini-genai.py` and `gemini-openai.py`) import this module to access the tool's functionality, keeping the API interaction logic separate from the tool's implementation.
+
 ## Dependencies
 
 This project uses `uv` to manage dependencies and run the scripts. The required Python libraries are specified within each script.
@@ -64,10 +68,10 @@ make gemini-openai
 
 ## Gemini Function Calling
 
-The core of this project is the function-calling feature of the Gemini model. This is implemented through the following components in both scripts:
+The core of this project is the function-calling feature of the Gemini model. This is implemented through the following components:
 
-*   **`WEATHER_TOOL`:** This is a dictionary that defines the `get_current_temperature` function for the Gemini model. It includes the function's name, a description of what it does, and the parameters it expects (in this case, a `location`).
+*   **`tools/weather_tool.py`:** This module contains the implementation of the `get_current_temperature` function and the detailed `WEATHER_TOOL_INSTRUCTIONS`. Centralizing the tool's logic here makes the code cleaner and easier to maintain.
 
-*   **`WEATHER_TOOL_INSTRUCTIONS`:** This is a set of instructions that guides the model on how to use the `get_current_temperature` function. It provides rules for handling different types of location inputs, such as expanding abbreviations, deciphering nicknames, and handling different phrasings of the weather question.
+*   **`WEATHER_TOOL`:** This is a library-specific dictionary that *defines* the `get_current_temperature` function for the Gemini model. Because the required structure of this definition varies between the `google-genai` and `openai` libraries, this dictionary remains in each of the main scripts (`gemini-genai.py` and `gemini-openai.py`). It tells the model the function's name, description, and expected parameters.
 
 By providing the model with these tools and instructions, we enable it to go beyond simple text generation and interact with external systems to perform tasks.
