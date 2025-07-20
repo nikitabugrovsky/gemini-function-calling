@@ -1,7 +1,7 @@
 # gemini-chatbot.py
 import argparse
 from clients.api_client import ApiClient
-from tools.weather_tool import get_current_temperature
+from tools.weather_tool import get_current_weather
 
 MODEL = "gemini-2.0-flash-lite"
 
@@ -32,7 +32,7 @@ def main(client_type: str):
 
         function_call = client.get_function_call()
         if function_call:
-            result = get_current_temperature(**function_call["arguments"])
+            result = get_current_weather(**function_call["arguments"])
             chatbot_message = f"""
                 I am going to call {function_call['name']} function
                 Function description: {function_call['description']}

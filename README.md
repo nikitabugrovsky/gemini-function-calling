@@ -1,12 +1,12 @@
 # Gemini Function Calling Weather Chatbot
 
-This project demonstrates the function-calling feature of Google's Gemini large language models. The Python script creates a simple chatbot that can retrieve the current temperature for a given location by using a custom function.
+This project demonstrates the function-calling feature of Google's Gemini large language models. The Python script creates a simple chatbot that can retrieve the current weather for a given location by using a custom function.
 
 ## How it Works
 
 This project is using **Strategy design pattern** to handle different methods of communicating with the Gemini API. This approach decouples the main application logic from the specific API client implementations, making the system cleaner and more extensible.
 
-**Date:** July 17, 2025
+**Date:** July 20, 2025
 
 The core logic is organized as follows:
 
@@ -18,7 +18,7 @@ The core logic is organized as follows:
     *   **`openai_client.py`:** A concrete strategy that implements the `ApiClient` interface using the `openai` library with Gemini's compatible endpoint.
 
 3.  **`tools/` directory:**
-    *   **`weather_tool.py`:** This module encapsulates the logic for the `get_current_temperature` function, including its communication with external geocoding and weather APIs.
+    *   **`weather_tool.py`:** This module encapsulates the logic for the `get_current_weather` function, including its communication with external geocoding and weather APIs. The function now returns a more detailed weather forecast, including temperature, wind speed, wind direction, and whether it is day or night. The `weathercode` is also translated into a human-readable description.
 
 When the chatbot runs, it uses the selected client to send the user's prompt to the Gemini model. The model can then issue a function call, which the main script executes via the `weather_tool` module.
 
@@ -65,7 +65,7 @@ If you do not provide a `--client` flag, it will default to using `genai`.
 
 The core of this project is the function-calling feature of the Gemini model. This is implemented through the following components:
 
-*   **`tools/weather_tool.py`:** This module contains the *implementation* of the `get_current_temperature` function and the detailed `WEATHER_TOOL_INSTRUCTIONS`.
+*   **`tools/weather_tool.py`:** This module contains the *implementation* of the `get_current_weather` function and the detailed `WEATHER_TOOL_INSTRUCTIONS`.
 
 *   **`clients/genai_client.py`, `clients/genai_client.py` & `clients/openai_client.py`:** Each client module contains its own library-specific `WEATHER_TOOL` dictionary. This dictionary *defines* the function for the model in the format required by its respective library (`google-genai` or `openai`).
 
