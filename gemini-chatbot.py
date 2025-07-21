@@ -6,6 +6,14 @@ from tools.weather_tool import get_current_weather
 
 MODEL = "gemini-2.0-flash-lite"
 
+class Color:
+    """Return Colorized Output."""
+    GREEN = "\033[92m"
+    YELLOW = "\033[93m"
+    RED = "\033[91m"
+    BOLD = "\033[1m"
+    END = "\033[0m"
+
 def get_api_client(client_type: str) -> ApiClient:
     """Factory function to get the appropriate API client."""
     if client_type == "genai":
@@ -21,11 +29,11 @@ def main(client_type: str):
     """Executes the chatbot flow using the selected API client."""
     client = get_api_client(client_type)
 
-    print(f"Gemini Chatbot d[o_0]b (Client: {client_type}, type 'exit' to quit)")
-    print("=" * 40)
+    print(f"{Color.BOLD}Gemini Chatbot {Color.GREEN}d[o_0]b{Color.END} (Client: {client_type}, type {Color.RED}'exit'{Color.END} to {Color.BOLD}quit{Color.END})")
+    print(f"{Color.BOLD}={Color.END}" * 40)
 
     while True:
-        user_input = input("You: ").strip()
+        user_input = input(f"{Color.YELLOW}{Color.BOLD}You:{Color.END} ").strip()
         if user_input.lower() in ("exit", "quit"):
             break
 
@@ -33,7 +41,7 @@ def main(client_type: str):
 
         function_call = client.get_function_call()
         if function_call:
-            print(f"d[o_0]b: I am gonna call {function_call['name']} tool with arguments: {json.dumps(function_call['arguments'])}")
+            print(f"{Color.GREEN}{Color.BOLD}d[o_0]b:{Color.END} I am gonna call {function_call['name']} tool with arguments: {json.dumps(function_call['arguments'])}")
             result = get_current_weather(**function_call["arguments"])
             client.generate_content(user_input=None, function_execution_result=result)
             chatbot_message = client.get_text_response()
@@ -41,7 +49,7 @@ def main(client_type: str):
             text_response = client.get_text_response()
             chatbot_message = f"""I am not calling any tools at the moment. My response is: {text_response}""".strip()
 
-        print(f"d[o_0]b: {chatbot_message}".strip())
+        print(f"{Color.GREEN}{Color.BOLD}d[o_0]b:{Color.END} {chatbot_message}".strip())
 
 
 if __name__ == "__main__":
