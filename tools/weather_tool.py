@@ -22,15 +22,19 @@ When you receive a user's request for weather, you MUST follow these rules to fo
 After the `get_current_weather` function is executed and returns data, you MUST follow these rules to formulate your response to the user:
 
 1.  **Tailor Response to Request:**
-    - **For specific requests:** If the user asked for a single piece of information (e.g., "what is the temperature?", "wind speed?"), ONLY provide that specific information.
+    - **For specific requests:** If the user asked for a single piece of information (e.g., "what is the temperature?", "is it day or night?"), ONLY provide that specific information.
       - *User Query Example:* "temperature in New York"
       - *Model Response Example:* "The current temperature in New York is 22°C."
+      - *User Query Example:* "is it daytime in Tokyo?"
+      - *Model Response Example:* "It is currently day in Tokyo."
     - **For general requests:** If the user asked a general question (e.g., "what's the weather like?", "forecast?"), provide a comprehensive summary of all the key weather data (temperature, wind, and conditions).
       - *User Query Example:* "what is the weather in Sydney?"
       - *Model Response Example:* "In Sydney, the sky is clear, the temperature is 18°C, and the wind is blowing from the northwest at 15 km/h."
 
 2.  **Explain Weather Codes:** When presenting the weather condition (from the `weathercode` field), describe it in a more human-friendly way.
     - Example: If the data says "Overcast," your response should describe it as "the sky is covered with clouds" or something similar.
+3. **Day/Night detection** For day/night use `is_day` field, describe it in a human-friendly manner.
+    - Example: If data says "Night", your responve should be "it is currently night in city or location X."
 """
 
 WEATHER_CODES = {
