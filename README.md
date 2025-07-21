@@ -6,7 +6,7 @@ This project demonstrates the function-calling feature of Google's Gemini large 
 
 This project is using **Strategy design pattern** to handle different methods of communicating with the Gemini API. This approach decouples the main application logic from the specific API client implementations, making the system cleaner and more extensible.
 
-**Date:** July 20, 2025
+**Date:** July 21, 2025
 
 The core logic is organized as follows:
 
@@ -21,6 +21,22 @@ The core logic is organized as follows:
     *   **`weather_tool.py`:** This module encapsulates the logic for the `get_current_weather` function, including its communication with external geocoding and weather APIs. The function now returns a more detailed weather forecast, including temperature, wind speed, wind direction, and whether it is day or night. The `weathercode` is also translated into a human-readable description.
 
 When the chatbot runs, it uses the selected client to send the user's prompt to the Gemini model. The model can then issue a function call, which the main script executes via the `weather_tool` module.
+
+## Enhanced Chatbot Flow: Two-Step Function Calls
+
+A significant enhancement to this project is the implementation of a two-step process for function calls. This ensures that the chatbot not only executes the requested function but also provides a more natural and human-readable response based on the function's output.
+
+Here’s how it works:
+
+1.  **Initial API Call:** The user's input is sent to the Gemini model. The model determines if a function call is needed to fulfill the request.
+
+2.  **Function Execution:** If the model decides to call a function (e.g., `get_current_weather`), the chatbot executes the function with the provided arguments and captures the result.
+
+3.  **Second API Call:** The result of the function call is then sent back to the Gemini model in a second API call.
+
+4.  **Human-Readable Output:** The model processes the function's result and generates a final, user-friendly response. For example, instead of just printing the raw weather data, the chatbot will now say something like, "The current temperature in New York is 25°C."
+
+This two-step process creates a more interactive and intuitive user experience. This workflow is a practical example of a pattern known as **Retrieval Augmented Generation (RAG)**. While RAG is often associated with retrieving data from static documents, our implementation uses a live API call for retrieval. In this context, **Function Calling is the mechanism that enables this specific, real-time implementation of the RAG pattern.**
 
 ## Dependencies
 
