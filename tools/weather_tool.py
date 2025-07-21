@@ -14,6 +14,8 @@ WEATHER_TOOL_INSTRUCTIONS = "\
     For e.g. Eternal City should become Rome.\
     5. Cities that have St. in their name should translate to Saint.\
     For e.g. St. Petersburg should become Saint Petersburg.\
+    6. When asked about weather and returning value for wethercode specifically \
+    try to explain it in a more human friendly way. For e.g. Overcast should be transformed into clouds covering a large part of the sky.\
 "
 
 WEATHER_CODES = {

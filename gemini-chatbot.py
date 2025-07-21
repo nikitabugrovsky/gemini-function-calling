@@ -1,5 +1,6 @@
 # gemini-chatbot.py
 import argparse
+import json
 from clients.api_client import ApiClient
 from tools.weather_tool import get_current_weather
 
@@ -28,31 +29,19 @@ def main(client_type: str):
         if user_input.lower() in ("exit", "quit"):
             break
 
-        client.generate_content(user_input)
+        client.generate_content(user_input, function_execution_result=None)
 
         function_call = client.get_function_call()
         if function_call:
+            print(f"d[o_0]b: I am gonna call {function_call['name']} tool with arguments: {json.dumps(function_call['arguments'])}")
             result = get_current_weather(**function_call["arguments"])
-            chatbot_message = f"""
-                I am going to call {function_call['name']} function
-                Function description: {function_call['description']}
-                {("-" * 45)}
-                Function arguments: {function_call['arguments']}
-                {("-" * 45)}
-                Function execution result: {result}
-            """
+            client.generate_content(user_input=None, function_execution_result=result)
+            chatbot_message = client.get_text_response()
         else:
             text_response = client.get_text_response()
-            chatbot_message = f"""
-                No function call found in the response.
-                {("-" * 45)}
-                Model response: {text_response}
-            """
+            chatbot_message = f"""I am not calling any tools at the moment. My response is: {text_response}""".strip()
 
-        msg_lines = chatbot_message.splitlines()
-        trimmed_msg = [line.lstrip() for line in msg_lines]
-        trimmed_chatbot_message = '\n'.join(trimmed_msg)
-        print(f"d[o_0]b: {trimmed_chatbot_message}")
+        print(f"d[o_0]b: {chatbot_message}".strip())
 
 
 if __name__ == "__main__":

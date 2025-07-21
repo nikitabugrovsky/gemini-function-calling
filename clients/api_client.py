@@ -6,11 +6,12 @@ class ApiClient(ABC):
     """Abstract base class for API clients."""
 
     def __init__(self, model: str):
+        """Initializes the client and any conversation history."""
         self.model = model
-        self._last_response: Optional[Any] = None
+        self.history = []
 
     @abstractmethod
-    def generate_content(self, user_input: str) -> None:
+    def generate_content(self, user_input: str, function_execution_result: dict | None) -> None:
         """
         Sends user input to the model and stores the response.
         """

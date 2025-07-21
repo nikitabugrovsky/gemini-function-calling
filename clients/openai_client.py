@@ -2,7 +2,7 @@
 from openai import OpenAI
 import os
 import json
-from typing import Dict, Any, Optional
+from typing import Optional
 
 from clients.api_client import ApiClient
 from tools.weather_tool import WEATHER_TOOL_INSTRUCTIONS
@@ -10,7 +10,7 @@ from tools.weather_tool import WEATHER_TOOL_INSTRUCTIONS
 WEATHER_TOOL_OPENAI = {
     "type": "function",
     "function": {
-        "name": "get_current_temperature",
+        "name": "get_current_weather",
         "description": "🌡️Gets the current temperature for a given location.",
         "parameters": {
             "type": "object",
@@ -35,29 +35,47 @@ class OpenAIClient(ApiClient):
             api_key=os.environ["GEMINI_API_KEY"],
         )
         self.system_message = {"role": "system", "content": WEATHER_TOOL_INSTRUCTIONS}
+        self.messages = [self.system_message]
+        self.last_response_message = None
 
-    def generate_content(self, user_input: str) -> None:
-        messages = [self.system_message, {"role": "user", "content": user_input}]
+    def generate_content(self, user_input: Optional[str], function_execution_result: Optional[dict]) -> None:
+        if user_input:
+            self.messages.append({"role": "user", "content": user_input})
+
+        if function_execution_result:
+            tool_call_id = self.get_function_call()['id']
+            self.messages.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": tool_call_id,
+                    "name": self.get_function_call()['name'],
+                    "content": str(function_execution_result),
+                }
+            )
+
         self._last_response = self.client.chat.completions.create(
             model=self.model,
-            messages=messages,
+            messages=self.messages,
             tools=[WEATHER_TOOL_OPENAI],
             tool_choice="auto",
         )
+        self.last_response_message = self._last_response.choices[0].message
+        if self.last_response_message:
+            self.messages.append(self.last_response_message)
 
-    def get_function_call(self) -> Optional[Dict[str, Any]]:
-        if self._last_response:
-            response_message = self._last_response.choices[0].message
-            if response_message.tool_calls:
-                tool_call = response_message.tool_calls[0].function
-                return {
-                    "name": tool_call.name,
-                    "arguments": json.loads(tool_call.arguments),
-                    "description": WEATHER_TOOL_OPENAI["function"]["description"]
-                }
-        return None
 
-    def get_text_response(self) -> Optional[str]:
-        if self._last_response:
-            return self._last_response.choices[0].message.content
-        return None
+    def get_text_response(self) -> str:
+        if self.last_response_message and self.last_response_message.content:
+            return self.last_response_message.content
+        return ""
+
+    def get_function_call(self) -> dict:
+        if self.last_response_message and self.last_response_message.tool_calls:
+            tc = self.last_response_message.tool_calls[0]
+            return {
+                "id": tc.id,
+                "name": tc.function.name,
+                "arguments": json.loads(tc.function.arguments),
+                "description": "Function call requested by the model."
+            }
+        return {}
