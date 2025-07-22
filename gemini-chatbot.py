@@ -4,8 +4,6 @@ import json
 from clients.api_client import ApiClient
 from tools.weather_tool import get_current_weather
 
-MODEL = "gemini-2.0-flash-lite"
-
 class Color:
     """Return Colorized Output."""
     GREEN = "\033[92m"
@@ -14,22 +12,22 @@ class Color:
     BOLD = "\033[1m"
     END = "\033[0m"
 
-def get_api_client(client_type: str) -> ApiClient:
+def get_api_client(client_type: str, model_type: str) -> ApiClient:
     """Factory function to get the appropriate API client."""
-    if client_type == "genai":
+    if client_type == "gemini-genai":
         from clients.genai_client import GenAIClient
-        return GenAIClient(model=MODEL)
-    elif client_type == "openai":
+        return GenAIClient(model=model_type)
+    elif client_type == "gemini-openai":
         from clients.openai_client import OpenAIClient
-        return OpenAIClient(model=MODEL)
+        return OpenAIClient(model=model_type)
     else:
         raise ValueError(f"Unknown client type: {client_type}")
 
-def main(client_type: str):
+def main(client_type: str, model_type: str):
     """Executes the chatbot flow using the selected API client."""
-    client = get_api_client(client_type)
+    client = get_api_client(client_type, model_type)
 
-    print(f"{Color.BOLD}Gemini Chatbot {Color.GREEN}d[o_0]b{Color.END} (Client: {client_type}, type {Color.RED}'exit'{Color.END} to {Color.BOLD}quit{Color.END})")
+    print(f"{Color.BOLD}Gemini Chatbot {Color.GREEN}d[o_0]b{Color.END} (Client: {client_type}, model: {model_type}, type {Color.RED}'exit'{Color.END} to {Color.BOLD}quit{Color.END})")
     print(f"{Color.BOLD}={Color.END}" * 40)
 
     while True:
@@ -57,9 +55,16 @@ if __name__ == "__main__":
     parser.add_argument(
         "--client",
         type=str,
-        choices=["genai", "openai"],
-        default="genai",
+        choices=["gemini-genai", "gemini-openai"],
+        default="gemini-genai",
         help="The API client library to use."
     )
+    parser.add_argument(
+        "--model",
+        type=str,
+        choices=["gemini-2.5-flash-lite-preview-06-17", "gemini-2.5-flash", "gemini-2.5-pro"],
+        default="gemini-2.5-flash-lite-preview-06-17",
+        help="LLM model to use."
+    )
     args = parser.parse_args()
-    main(args.client)
+    main(args.client, args.model)
