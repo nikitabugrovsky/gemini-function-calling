@@ -20,6 +20,9 @@ def get_api_client(client_type: str, model_type: str) -> ApiClient:
     elif client_type == "gemini-openai":
         from clients.openai_client import OpenAIClient
         return OpenAIClient(model=model_type)
+    elif client_type == "gemma-openai":
+        from clients.ollama_client import OllamaClient
+        return OllamaClient(model=model_type)
     else:
         raise ValueError(f"Unknown client type: {client_type}")
 
@@ -27,7 +30,7 @@ def main(client_type: str, model_type: str):
     """Executes the chatbot flow using the selected API client."""
     client = get_api_client(client_type, model_type)
 
-    print(f"{Color.BOLD}Gemini Chatbot {Color.GREEN}d[o_0]b{Color.END} (Client: {client_type}, model: {model_type}, type {Color.RED}'exit'{Color.END} to {Color.BOLD}quit{Color.END})")
+    print(f"{Color.BOLD}Multi-model Chatbot {Color.GREEN}d[o_0]b{Color.END} (Client: {client_type}, model: {model_type}, type {Color.RED}'exit'{Color.END} to {Color.BOLD}quit{Color.END})")
     print(f"{Color.BOLD}={Color.END}" * 40)
 
     while True:
@@ -46,23 +49,22 @@ def main(client_type: str, model_type: str):
         else:
             text_response = client.get_text_response()
             chatbot_message = f"""I am not calling any tools at the moment. My response is: {text_response}""".strip()
-
         print(f"{Color.GREEN}{Color.BOLD}d[o_0]b:{Color.END} {chatbot_message}".strip())
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Gemini Chatbot with Function Calling")
+    parser = argparse.ArgumentParser(description="Multi-model Chatbot with Function Calling")
     parser.add_argument(
         "--client",
         type=str,
-        choices=["gemini-genai", "gemini-openai"],
+        choices=["gemini-genai", "gemini-openai", "gemma-openai"],
         default="gemini-genai",
         help="The API client library to use."
     )
     parser.add_argument(
         "--model",
         type=str,
-        choices=["gemini-2.5-flash-lite-preview-06-17", "gemini-2.5-flash", "gemini-2.5-pro"],
+        choices=["gemini-2.5-flash-lite-preview-06-17", "gemini-2.5-flash", "gemini-2.5-pro", "gemma3:1b"],
         default="gemini-2.5-flash-lite-preview-06-17",
         help="LLM model to use."
     )

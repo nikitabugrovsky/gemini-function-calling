@@ -1,6 +1,6 @@
-# Gemini Function Calling Weather Chatbot
+# Multimodel Function Calling Chatbot
 
-This project demonstrates the function-calling feature of Google's Gemini large language models. The Python script creates a simple chatbot that can retrieve the current weather for a given location by using a custom function.
+This project demonstrates function calling with large language models, supporting both Google's Gemini API and local models via Ollama. The Python script creates a simple chatbot that can retrieve the current weather for a given location by using a custom function, showcasing the flexibility of a strategy-based design.
 
 ## How it Works
 
@@ -10,14 +10,16 @@ This project is using **Strategy design pattern** to handle different methods of
 
 The core logic is organized as follows:
 
-1.  **`gemini-chatbot.py`:** This is the single entry point for the application. It accepts a command-line argument to select which API client "strategy" to use (`genai` or `openai`). It contains the main chat loop, which is now agnostic to the underlying API library.
+1.  **`multi-model-chatbot.py`:** This is the single entry point for the application. It accepts a command-line argument to select which API client "strategy" to use (`genai` or `openai`). It contains the main chat loop, which is now agnostic to the underlying API library.
 
 2.  **`clients/` directory:** This module contains the different strategies for communicating with the LLM.
     *   **`api_client.py`:** An abstract base class that defines a common interface (`generate_content`, `get_function_call`, etc.) that all concrete clients must implement.
     *   **`genai_client.py`:** A concrete strategy that implements the `ApiClient` interface using the `google-genai` library.
     *   **`openai_client.py`:** A concrete strategy that implements the `ApiClient` interface using the `openai` library with Gemini's compatible endpoint.
+    *   **`ollama_client.py`:** A concrete strategy for running models locally using **[Ollama](https://ollama.com/)**. It uses the `openai` library to connect to Ollama's OpenAI-compatible API endpoint, allowing for local, offline-capable chatbot functionality without relying on cloud-based APIs.
 
 3.  **`tools/` directory:**
+
     *   **`weather_tool.py`:** This module encapsulates the logic for the `get_current_weather` function. It now uses the [Open-Meteo API](https://open-meteo.com/) for both geocoding (to get coordinates for a location) and for retrieving weather data. The function now returns a more detailed weather forecast, including temperature, wind speed, wind direction, and whether it is day or night. The `weathercode` is also translated into a human-readable description.
 
 When the chatbot runs, it uses the selected client to send the user's prompt to the Gemini model. The model can then issue a function call, which the main script executes via the `weather_tool` module.
@@ -40,7 +42,10 @@ This two-step process creates a more interactive and intuitive user experience. 
 
 ## Dependencies
 
-This project uses `uv` to manage dependencies. The required Python libraries for the application are:
+- This project uses `uv` to manage dependencies.
+- `ollama` is required to run `ollama_client.py` implementation.
+
+The required Python libraries for the application are:
 
 *   `google-genai`: The official Python library for the Google AI SDK.
 *   `openai`: The library for the OpenAI API, used to connect to Gemini's OpenAI-compatible endpoint.
@@ -48,12 +53,27 @@ This project uses `uv` to manage dependencies. The required Python libraries for
 
 ## API Keys
 
+## Local Model Setup with Ollama
+
+A key feature of this project is the ability to run the chatbot against a model deployed locally on your machine.
+
+1.  **Install Ollama:** First, you need to install Ollama. You can find the download instructions on their official website:
+    *   <https://ollama.com/download>
+
+2.  **Pull the Model:** Once Ollama is running, you must pull the model used by our client. We are using the slim, open `gemma3:1b` model. Open your terminal and run:
+    ```bash
+    ollama run gemma3:1b
+    ```
+    You can find more information about the model here: <https://ollama.com/library/gemma3>
+
 To run this script, you will need to set up your Gemini API key as an environment variable.
 
 First, for the Gemini API, you'll need to set the `GEMINI_API_KEY`:
 
 ```bash
 export GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
+Note: The Ollama client does not require any API keys, as it runs entirely on your local machine.
+
 ```
 
 The Open-Meteo API, which is used for geocoding and weather data, is free to use without an API key. However, for higher usage, you can optionally add an `OPENMETEO_API_KEY`:
@@ -67,6 +87,11 @@ export OPENMETEO_API_KEY="YOUR_OPENMETEO_API_KEY"
 You can run the chatbot using the main `gemini-chatbot.py` script. Use the `--client` flag to specify which API library to use.
 
 To run the `google-genai` client implementation:
+To run the `ollama` client implementation against your local model:
+```bash
+make gemma-openai
+```
+
 ```bash
 make gemini-genai
 ```
@@ -77,12 +102,12 @@ make gemini-openai
 ```
 If you do not provide a `--client` flag, it will default to using `genai`.
 
-## Gemini Function Calling
+## Function Calling Implementation
 
 The core of this project is the function-calling feature of the Gemini model. This is implemented through the following components:
 
 *   **`tools/weather_tool.py`:** This module contains the *implementation* of the `get_current_weather` function and the detailed `WEATHER_TOOL_INSTRUCTIONS`.
 
-*   **`clients/genai_client.py`, `clients/genai_client.py` & `clients/openai_client.py`:** Each client module contains its own library-specific `WEATHER_TOOL` dictionary. This dictionary *defines* the function for the model in the format required by its respective library (`google-genai` or `openai`).
+*   **`clients/ollama_client.py`, `clients/genai_client.py` & `clients/openai_client.py`:** Each client module contains its own library-specific `WEATHER_TOOL` dictionary. This dictionary *defines* the function for the model in the format required by its respective library (`google-genai` or `openai`).
 
 This separation ensures that the tool's implementation is centralized, while the API-specific definitions live alongside the client logic.
