@@ -51,8 +51,6 @@ The required Python libraries for the application are:
 *   `openai`: The library for the OpenAI API, used to connect to Gemini's OpenAI-compatible endpoint.
 *   `requests`: A simple, yet elegant, HTTP library for the weather tool.
 
-## API Keys
-
 ## Local Model Setup with Ollama
 
 A key feature of this project is the ability to run the chatbot against a model deployed locally on your machine.
@@ -65,6 +63,8 @@ A key feature of this project is the ability to run the chatbot against a model 
     ollama run gemma3:1b
     ```
     You can find more information about the model here: <https://ollama.com/library/gemma3>
+
+## API Keys
 
 To run this script, you will need to set up your Gemini API key as an environment variable.
 
