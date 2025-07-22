@@ -134,18 +134,19 @@ def _map_weather_data(init_weather_data: InitWeatherData) -> FinalWeatherData:
 
 def _get_location_coordinates(location: str) -> Tuple[float, float]:
     """Gets the coordinates for a given location."""
-    url = "https://geocode.maps.co/search?"
-    params = {"city": location}
-    api_key = os.environ.get("GEOCODE_API_KEY")
+    url = "https://geocoding-api.open-meteo.com/v1/search?"
+    params = {"name": location, "count": 1, "language": "en", "format": "json"}
+    api_key = os.environ.get("OPENMETEO_API_KEY")
     if api_key:
-            params["api_key"] = api_key
+            params["apikey"] = api_key
     geocode_url = url + urllib.parse.urlencode(params)
     geocode_response = requests.get(geocode_url)
     geocode_response.raise_for_status()
     geocode_data = geocode_response.json()
+    geocode_data = geocode_data["results"]
 
-    latitude = geocode_data[0]["lat"]
-    longitude = geocode_data[0]["lon"]
+    latitude = geocode_data[0]["latitude"]
+    longitude = geocode_data[0]["longitude"]
 
     return latitude, longitude
 

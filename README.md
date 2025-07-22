@@ -18,7 +18,7 @@ The core logic is organized as follows:
     *   **`openai_client.py`:** A concrete strategy that implements the `ApiClient` interface using the `openai` library with Gemini's compatible endpoint.
 
 3.  **`tools/` directory:**
-    *   **`weather_tool.py`:** This module encapsulates the logic for the `get_current_weather` function, including its communication with external geocoding and weather APIs. The function now returns a more detailed weather forecast, including temperature, wind speed, wind direction, and whether it is day or night. The `weathercode` is also translated into a human-readable description.
+    *   **`weather_tool.py`:** This module encapsulates the logic for the `get_current_weather` function. It now uses the [Open-Meteo API](https://open-meteo.com/) for both geocoding (to get coordinates for a location) and for retrieving weather data. The function now returns a more detailed weather forecast, including temperature, wind speed, wind direction, and whether it is day or night. The `weathercode` is also translated into a human-readable description.
 
 When the chatbot runs, it uses the selected client to send the user's prompt to the Gemini model. The model can then issue a function call, which the main script executes via the `weather_tool` module.
 
@@ -48,7 +48,7 @@ This project uses `uv` to manage dependencies. The required Python libraries for
 
 ## API Keys
 
-To run this script, you will need to set up two API keys as environment variables.
+To run this script, you will need to set up your Gemini API key as an environment variable.
 
 First, for the Gemini API, you'll need to set the `GEMINI_API_KEY`:
 
@@ -56,10 +56,10 @@ First, for the Gemini API, you'll need to set the `GEMINI_API_KEY`:
 export GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
 ```
 
-Second optionally, you will need an API key from a geocoding service that is compatible with the [Geocode Earth](https://geocode.earth/) API. The script is configured to use the `https://geocode.maps.co/search` endpoint. Set it as an environment variable:
+The Open-Meteo API, which is used for geocoding and weather data, is free to use without an API key. However, for higher usage, you can optionally add an `OPENMETEO_API_KEY`:
 
 ```bash
-export GEOCODE_API_KEY="YOUR_GEOCODE_API_KEY"
+export OPENMETEO_API_KEY="YOUR_OPENMETEO_API_KEY"
 ```
 
 ## How to Run
