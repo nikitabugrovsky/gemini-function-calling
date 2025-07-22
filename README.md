@@ -72,9 +72,10 @@ First, for the Gemini API, you'll need to set the `GEMINI_API_KEY`:
 
 ```bash
 export GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
-Note: The Ollama client does not require any API keys, as it runs entirely on your local machine.
+
 
 ```
+Note: The Ollama client does not require any API keys, as it runs entirely on your local machine.
 
 The Open-Meteo API, which is used for geocoding and weather data, is free to use without an API key. However, for higher usage, you can optionally add an `OPENMETEO_API_KEY`:
 
@@ -84,7 +85,7 @@ export OPENMETEO_API_KEY="YOUR_OPENMETEO_API_KEY"
 
 ## How to Run
 
-You can run the chatbot using the main `gemini-chatbot.py` script. Use the `--client` flag to specify which API library to use.
+You can run the chatbot using the main `multi-model-chatbot.py` script. Use the `--client` flag to specify which API library to use.
 
 To run the `google-genai` client implementation:
 To run the `ollama` client implementation against your local model:
