@@ -8,6 +8,7 @@ class Color:
     """Return Colorized Output."""
     GREEN = "\033[92m"
     YELLOW = "\033[93m"
+    BLUE = "\033[94m"
     RED = "\033[91m"
     BOLD = "\033[1m"
     END = "\033[0m"
@@ -42,14 +43,15 @@ def main(client_type: str, model_type: str):
 
         function_call = client.get_function_call()
         if function_call:
-            print(f"{Color.GREEN}{Color.BOLD}d[o_0]b:{Color.END} I am gonna call {function_call['name']} tool with arguments: {json.dumps(function_call['arguments'])}")
+            print(f"{Color.GREEN}{Color.BOLD}d[o_0]b{Color.BLUE}[Tool: None]:{Color.END} I am gonna call {function_call['name']} tool with arguments: {json.dumps(function_call['arguments'])}")
             result = get_current_weather(**function_call["arguments"])
             client.generate_content(user_input=None, function_execution_result=result)
             chatbot_message = client.get_text_response()
+            print(f"{Color.GREEN}{Color.BOLD}d[o_0]b{Color.BLUE}[Tool: {function_call["name"]}]:{Color.END} {chatbot_message}".strip())
         else:
             text_response = client.get_text_response()
-            chatbot_message = f"""I am not calling any tools at the moment. My response is: {text_response}""".strip()
-        print(f"{Color.GREEN}{Color.BOLD}d[o_0]b:{Color.END} {chatbot_message}".strip())
+            chatbot_message = f"{text_response}".strip()
+            print(f"{Color.GREEN}{Color.BOLD}d[o_0]b{Color.BLUE}[Tool: None]:{Color.END} {chatbot_message}".strip())
 
 
 if __name__ == "__main__":
