@@ -16,7 +16,7 @@ The core logic is organized as follows:
     *   **`api_client.py`:** An abstract base class that defines a common interface (`generate_content`, `get_function_call`, etc.) that all concrete clients must implement.
     *   **`genai_client.py`:** A concrete strategy that implements the `ApiClient` interface using the `google-genai` library.
     *   **`openai_client.py`:** A concrete strategy that implements the `ApiClient` interface using the `openai` library with Gemini's compatible endpoint.
-    *   **`ollama_client.py`:** A concrete strategy for running models locally using **[Ollama](https://ollama.com/)**. It uses the `openai` library to connect to Ollama's OpenAI-compatible API endpoint, allowing for local, offline-capable chatbot functionality without relying on cloud-based APIs.
+    *   **`ollama_client.py`:** A concrete strategy for running models locally using **[Ollama](https://ollama.com/)**. It uses the `openai` library to connect to Ollama's OpenAI-compatible API endpoint. This client uses an advanced **few-shot prompting** strategy to ensure reliable function calling with smaller models like Gemma. See the "Advanced Function Calling with Local Models" section below for more details.
 
 3.  **`tools/` directory:**
 
@@ -44,6 +44,7 @@ This two-step process creates a more interactive and intuitive user experience. 
 
 - This project uses `uv` to manage dependencies.
 - `ollama` is required to run `ollama_client.py` implementation.
+- `make` to run chatbot in different modes
 
 The required Python libraries for the application are:
 
@@ -72,9 +73,8 @@ First, for the Gemini API, you'll need to set the `GEMINI_API_KEY`:
 
 ```bash
 export GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
-
-
 ```
+
 Note: The Ollama client does not require any API keys, as it runs entirely on your local machine.
 
 The Open-Meteo API, which is used for geocoding and weather data, is free to use without an API key. However, for higher usage, you can optionally add an `OPENMETEO_API_KEY`:
@@ -88,13 +88,13 @@ export OPENMETEO_API_KEY="YOUR_OPENMETEO_API_KEY"
 You can run the chatbot using the main `multi-model-chatbot.py` script. Use the `--client` flag to specify which API library to use.
 
 To run the `google-genai` client implementation:
+```bash
+make gemini-genai
+```
+
 To run the `ollama` client implementation against your local model:
 ```bash
 make gemma-openai
-```
-
-```bash
-make gemini-genai
 ```
 
 To run the `openai` library client implementation:
@@ -112,3 +112,26 @@ The core of this project is the function-calling feature of the Gemini model. Th
 *   **`clients/ollama_client.py`, `clients/genai_client.py` & `clients/openai_client.py`:** Each client module contains its own library-specific `WEATHER_TOOL` dictionary. This dictionary *defines* the function for the model in the format required by its respective library (`google-genai` or `openai`).
 
 This separation ensures that the tool's implementation is centralized, while the API-specific definitions live alongside the client logic.
+
+## Advanced Function Calling with Local Models: The Few-Shot Prompting Strategy
+
+It is important to understand that the function calling mechanism for Gemma models is fundamentally different from models with native tool-use capabilities. Gemma models perform function calling through a **structured prompting strategy**. This means the model is instructed to generate a specific JSON output within its text response when a tool is needed, which the client code must then parse to execute the function. This prompt-based method requires more explicit guidance, which is why the few-shot strategy is so effective.
+
+To solve the challenges of this approach, the `ollama_client.py` implements a powerful technique known as **few-shot prompting**. Instead of just providing a system prompt with instructions, we seed the model's conversation history with a complete, multi-step example of the desired interaction. This "teaches" the model the expected behavior through demonstration.
+
+The `OllamaClient` now initializes its history with the following sequence:
+
+1.  **System Prompt:** The base instructions for the assistant.
+2.  **Example 1: Handling a Greeting:**
+    *   **User:** "Hello"
+    *   **Assistant:** "Hello! How can I help you today?"
+    *   *This teaches the model to engage in conversation without immediately calling a tool.*
+3.  **Example 2: A Full, Multi-Turn Interaction:**
+    *   A user asks for the weather using a nickname ("The Big Apple").
+    *   The assistant correctly identifies the location and formats the `get_current_weather` tool call in JSON.
+    *   The client simulates receiving the weather data and feeding it back to the model for summarization.
+    *   The assistant provides a natural language summary ("The weather in New York is currently 55 degrees and cloudy.").
+    *   **Crucially**, the user asks a follow-up, partial question: "what is the temperature?".
+    *   The assistant correctly answers by referencing the previous tool output ("The current temperature is 55 degrees.").
+
+By providing these concrete examples, the model learns the nuances of when (and when not) to use its tools, how to summarize data, and how to answer follow-up questions. This makes the local model's function-calling capabilities far more reliable and robust.

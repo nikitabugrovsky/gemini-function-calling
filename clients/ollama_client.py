@@ -6,7 +6,6 @@ from openai import OpenAI
 from typing import Dict, List, Optional, Any
 
 from clients.api_client import ApiClient
-from tools.weather_tool import WEATHER_TOOL_INSTRUCTIONS
 
 WEATHER_TOOL_OLLAMA = {
     "name": "get_current_weather",
@@ -24,7 +23,7 @@ WEATHER_TOOL_OLLAMA = {
 }
 
 OLLAMA_SYSTEM_PROMPT = f"""
-You are a helpful assistant that can access a tool to get the weather.
+You are a helpful assistant that can access a tool to get the weather. Your goal is to assist the user, and that includes deciding when it is appropriate to use your tools.
 
 To use the tool, you MUST respond with a JSON object that specifies the tool name and its arguments. The JSON object must be the only thing in your response, wrapped in ```json tags.
 
@@ -41,7 +40,7 @@ For example, to get the weather in Paris, you must respond with:
 }}
 ```
 
-If you do not need to use a tool, or if the user is not asking about weather, respond with a natural language message.
+If the user's request is not about weather, or if they are just making a general statement or greeting, you should respond with a natural language message, not a tool call. For example, if the user says "hello" or "how are you", you should respond with a friendly greeting, not a tool call.
 """
 
 
@@ -57,7 +56,11 @@ class OllamaClient(ApiClient):
             base_url="http://localhost:11434/v1",
             api_key="ollama",  # lib stub
         )
-        self.history: List[Dict[str, Any]] = [{"role": "system", "content": OLLAMA_SYSTEM_PROMPT}]
+        self.history: List[Dict[str, Any]] = [
+            {"role": "user", "content": "Hello"},
+            {"role": "assistant", "content": "Hello! How can I help you today?"},
+            {"role": "system", "content": OLLAMA_SYSTEM_PROMPT},
+        ]
         self.latest_response_content: Optional[str] = None
 
     def generate_content(self, user_input: Optional[str], function_execution_result: Optional[dict]) -> None:
@@ -69,7 +72,13 @@ class OllamaClient(ApiClient):
             self.history.append({"role": "user", "content": user_input})
 
         if function_execution_result:
-            summary_prompt = f"The weather tool returned the following data: {json.dumps(function_execution_result)}. Please summarize this result for the user in a natural, conversational way."
+            summary_prompt = (
+                "You have received the following data from the weather tool: "
+                f"{json.dumps(function_execution_result)}. "
+                "Use this data to answer the user's request. If the user asked a general question (e.g., 'what is the weather?'), "
+                "provide a full summary in a natural language. If the user asked a specific question (e.g., 'what is the temperature?'), "
+                "provide a direct answer to that specific question. Use natural language."
+            )
             self.history.append({"role": "user", "content": summary_prompt})
 
         response = self.client.chat.completions.create(

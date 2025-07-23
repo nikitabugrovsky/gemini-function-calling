@@ -1,4 +1,4 @@
-# gemini-chatbot.py
+# multi-model-chatbot.py
 import argparse
 import json
 from clients.api_client import ApiClient
