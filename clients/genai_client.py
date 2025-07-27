@@ -1,6 +1,7 @@
 # clients/genai_client.py
 import os
 from typing import Dict, Any, Optional
+from collections import deque
 
 from google.genai.client import Client
 from google.genai.types import (
@@ -13,6 +14,8 @@ from google.genai.types import (
 
 from clients.api_client import ApiClient
 from tools.weather_tool import WEATHER_TOOL_INSTRUCTIONS
+
+CONVERSATION_WINDOW_SIZE = 10
 
 WEATHER_TOOL_GENAI = {
     "name": "get_current_weather",
@@ -37,7 +40,7 @@ class GenAIClient(ApiClient):
         super().__init__(model)
         api_key = os.environ.get("GEMINI_API_KEY")
         self.client = Client(api_key=api_key)
-        self.history = []
+        self.history = deque(maxlen=CONVERSATION_WINDOW_SIZE)
         tool = Tool(function_declarations=[WEATHER_TOOL_GENAI])
         self.config = GenerateContentConfig(
             tools=[tool],
@@ -58,23 +61,29 @@ class GenAIClient(ApiClient):
                 response={"result": function_execution_result},
             )
 
+            if self._last_response and self._last_response.candidates:
+                 self.history.append(self._last_response.candidates[0].content)
+
             self.history.append(
                 Content(
                     parts=[Part(function_response=function_response)],
-                    role="model",
+                    role="tool",
                 )
             )
-            contents = self.history
-        else:
-            contents = [Content(parts=[Part(text=user_input)], role="user")]
-            self.history.extend(contents)
+        elif user_input:
+            self.history.append(Content(parts=[Part(text=user_input)], role="user"))
+
+        contents_to_send = list(self.history)
 
         self._last_response = self.client.models.generate_content(
             model=self.model,
-            contents=contents,
+            contents=contents_to_send,
             config=self.config,
         )
-        self.history.append(self._last_response.candidates[0].content)
+
+        part = self._last_response.candidates[0].content.parts[0]
+        if not part.function_call:
+             self.history.append(self._last_response.candidates[0].content)
 
 
     def get_function_call(self) -> Optional[Dict[str, Any]]:

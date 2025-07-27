@@ -135,3 +135,33 @@ The `OllamaClient` now initializes its history with the following sequence:
     *   The assistant correctly answers by referencing the previous tool output ("The current temperature is 55 degrees.").
 
 By providing these concrete examples, the model learns the nuances of when (and when not) to use its tools, how to summarize data, and how to answer follow-up questions. This makes the local model's function-calling capabilities far more reliable and robust.
+
+## Conversation History: Sliding Window Strategy for Prompts
+
+To ensure efficient and scalable conversations, all API clients in this repository (`OpenAIClient`, `GenAIClient`, and `OllamaClient`) have been updated to use a **Sliding Window** memory strategy.
+
+### The Problem with Full History
+
+Previously, the entire conversation history was submitted with each new user request. This approach, while simple, leads to two major issues:
+1.  **High Token Consumption:** As the conversation grows, the number of tokens sent to the model increases with every turn, leading to higher operational costs.
+2.  **Context Window Limits:** Eventually, the conversation history can exceed the model's maximum context window, causing errors and an inability to continue the conversation.
+
+### Solution: Sliding Window
+
+The sliding window strategy addresses this by maintaining a fixed-size history of the most recent conversational turns. We use Python's `collections.deque` with a `maxlen` to automatically manage this.
+
+-   When a new message (from the user or the assistant) is added, it is appended to the history.
+-   If the history is full, the oldest message is automatically dropped.
+-   This ensures that the token count remains predictable and bounded, preventing context overload while keeping the most recent interactions fresh in the model's memory.
+
+A window size of **10** recent messages is currently implemented across all clients.
+
+### Special Case: The `OllamaClient`
+
+The `OllamaClient` uses a "few-shot" prompting strategy, which requires a static system prompt and examples to be present in every API call to guide the model's behavior. To accommodate this, its implementation of the sliding window is slightly different:
+
+-   The **initial prompt** (containing the system message and few-shot examples) is stored separately and is **never dropped**.
+-   The sliding window is applied **only to the actual user/assistant conversation**.
+-   At runtime, the final prompt is constructed by combining the static initial prompt with the dynamic, sliding conversation history.
+
+This hybrid approach gives us the best of both worlds: the robust, guided behavior from few-shot prompting and the memory efficiency of a sliding window.

@@ -1,11 +1,13 @@
 # clients/ollama_client.py
 
-import os
 import json
+from collections import deque
 from openai import OpenAI
 from typing import Dict, List, Optional, Any
 
 from clients.api_client import ApiClient
+
+CONVERSATION_WINDOW_SIZE = 10
 
 WEATHER_TOOL_OLLAMA = {
     "name": "get_current_weather",
@@ -23,7 +25,9 @@ WEATHER_TOOL_OLLAMA = {
 }
 
 OLLAMA_SYSTEM_PROMPT = f"""
-You are a helpful assistant that can access a tool to get the weather. Your goal is to assist the user, and that includes deciding when it is appropriate to use your tools.
+You are a helpful assistant that can access a tool to get the weather in a particular city. Your goal is to assist the user, and that includes deciding when it is appropriate to use your tools.
+
+If you have identified a city and weather request, you MUST use the weather tool.
 
 To use the tool, you MUST respond with a JSON object that specifies the tool name and its arguments. The JSON object must be the only thing in your response, wrapped in ```json tags.
 
@@ -56,11 +60,12 @@ class OllamaClient(ApiClient):
             base_url="http://localhost:11434/v1",
             api_key="ollama",  # lib stub
         )
-        self.history: List[Dict[str, Any]] = [
+        self.initial_prompt: List[Dict[str, Any]] = [
             {"role": "user", "content": "Hello"},
             {"role": "assistant", "content": "Hello! How can I help you today?"},
             {"role": "system", "content": OLLAMA_SYSTEM_PROMPT},
         ]
+        self.history: deque[Dict[str, Any]] = deque(maxlen=CONVERSATION_WINDOW_SIZE)
         self.latest_response_content: Optional[str] = None
 
     def generate_content(self, user_input: Optional[str], function_execution_result: Optional[dict]) -> None:
@@ -81,9 +86,11 @@ class OllamaClient(ApiClient):
             )
             self.history.append({"role": "user", "content": summary_prompt})
 
+        messages_to_send = self.initial_prompt + list(self.history)
+
         response = self.client.chat.completions.create(
             model=self.model,
-            messages=self.history,
+            messages=messages_to_send,
             temperature=0,
         )
 

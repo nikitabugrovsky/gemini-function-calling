@@ -3,9 +3,12 @@ from openai import OpenAI
 import os
 import json
 from typing import Optional
+from collections import deque
 
 from clients.api_client import ApiClient
 from tools.weather_tool import WEATHER_TOOL_INSTRUCTIONS
+
+CONVERSATION_WINDOW_SIZE = 10
 
 WEATHER_TOOL_OPENAI = {
     "type": "function",
@@ -35,7 +38,7 @@ class OpenAIClient(ApiClient):
             api_key=os.environ["GEMINI_API_KEY"],
         )
         self.system_message = {"role": "system", "content": WEATHER_TOOL_INSTRUCTIONS}
-        self.messages = [self.system_message]
+        self.messages = deque(maxlen=CONVERSATION_WINDOW_SIZE)
         self.last_response_message = None
 
     def generate_content(self, user_input: Optional[str], function_execution_result: Optional[dict]) -> None:
@@ -53,9 +56,11 @@ class OpenAIClient(ApiClient):
                 }
             )
 
+        messages_to_send = [self.system_message] + list(self.messages)
+
         self._last_response = self.client.chat.completions.create(
             model=self.model,
-            messages=self.messages,
+            messages=messages_to_send,
             tools=[WEATHER_TOOL_OPENAI],
             tool_choice="auto",
         )
