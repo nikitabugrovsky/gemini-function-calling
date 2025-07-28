@@ -1,9 +1,11 @@
 .DEFAULT_GOAL := help
 CHATBOT_APP := multi-model-chatbot.py
 
-RUN_GENAI := @uv run --with 'requests' --with 'google-genai'
-RUN_OPENAI := @uv run --with 'requests' --with 'openai'
+# Define reusable commands with prompt-toolkit for a better CLI experience
+RUN_GENAI := @uv run --with 'requests' --with 'google-genai' --with 'prompt-toolkit'
+RUN_OPENAI := @uv run --with 'requests' --with 'openai' --with 'prompt-toolkit'
 
+# Phony targets are commands, not files
 .PHONY: help gemini-genai gemini-openai gemma-openai clean
 
 # Colors for help text
@@ -12,6 +14,7 @@ white := \033[0m
 
 help: ## Prints help for targets with comments.
 	@cat $(MAKEFILE_LIST) | grep -E '^[a-zA-Z_-]+:.*?## .*$$' | awk 'BEGIN {FS = ":.*?## "}; {printf "$(green)%-30s$(white) %s\n", $$1, $$2}'
+
 
 gemini-genai: ## Run google-genai library implementation with the gemini model.
 	$(RUN_GENAI) $(CHATBOT_APP) --client gemini-genai

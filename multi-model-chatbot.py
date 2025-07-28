@@ -1,17 +1,21 @@
 # multi-model-chatbot.py
 import argparse
 import json
+
 from clients.api_client import ApiClient
 from tools.weather_tool import get_current_weather
 
+from prompt_toolkit import prompt
+from prompt_toolkit.formatted_text import FormattedText
+from prompt_toolkit import print_formatted_text
+
 class Color:
-    """Return Colorized Output."""
-    GREEN = "\033[92m"
-    YELLOW = "\033[93m"
-    BLUE = "\033[94m"
-    RED = "\033[91m"
-    BOLD = "\033[1m"
-    END = "\033[0m"
+    """Class to hold prompt_toolkit-compatible color names."""
+    GREEN = "ansigreen"
+    YELLOW = "ansiyellow"
+    BLUE = "ansiblue"
+    RED = "ansired"
+    BOLD = "bold"
 
 def get_api_client(client_type: str, model_type: str) -> ApiClient:
     """Factory function to get the appropriate API client."""
@@ -27,32 +31,65 @@ def get_api_client(client_type: str, model_type: str) -> ApiClient:
     else:
         raise ValueError(f"Unknown client type: {client_type}")
 
-def main(client_type: str, model_type: str):
+def main(client_type: str, model_type: str) -> None:
     """Executes the chatbot flow using the selected API client."""
     client = get_api_client(client_type, model_type)
 
-    print(f"{Color.BOLD}Multi-model Chatbot {Color.GREEN}d[o_0]b{Color.END} (Client: {client_type}, model: {model_type}, type {Color.RED}'exit'{Color.END} to {Color.BOLD}quit{Color.END})")
-    print(f"{Color.BOLD}={Color.END}" * 40)
+    header = FormattedText([
+        (Color.BOLD, 'Multi-model Chatbot '),
+        (f'{Color.GREEN} {Color.BOLD}', 'd[o_0]b'),
+        (Color.BOLD, f' (Client: {client_type}, model: {model_type}, type '),
+        (f'{Color.RED} {Color.BOLD}', "'exit' "),
+        (Color.BOLD, 'or press '),
+        (f'{Color.RED} {Color.BOLD}', "'Ctrl + D' "),
+        (Color.BOLD, 'to quit)')
+    ])
+    print_formatted_text(header)
+    print_formatted_text(FormattedText([(Color.BOLD, "=" * 60)]))
 
     while True:
-        user_input = input(f"{Color.YELLOW}{Color.BOLD}You:{Color.END} ").strip()
-        if user_input.lower() in ("exit", "quit"):
+        try:
+            prompt_text = FormattedText([(f'{Color.YELLOW} {Color.BOLD}', 'You: ')])
+            user_input = prompt(prompt_text).strip()
+
+            if user_input.lower() in ("exit", "quit"):
+                break
+
+            client.generate_content(user_input, function_execution_result=None)
+
+            function_call = client.get_function_call()
+            if function_call:
+                thinking_msg = FormattedText([
+                    (f'{Color.GREEN} {Color.BOLD}', 'd[o_0]b'),
+                    (Color.BLUE, '[Tool: None]: '),
+                    ('', f"I am gonna call {function_call['name']} tool with arguments: {json.dumps(function_call['arguments'])}")
+                ])
+                print_formatted_text(thinking_msg)
+
+                result = get_current_weather(**function_call["arguments"])
+                client.generate_content(user_input=None, function_execution_result=result)
+                chatbot_message = client.get_text_response()
+
+                bot_msg = FormattedText([
+                    (f'{Color.GREEN} {Color.BOLD}', 'd[o_0]b'),
+                    (Color.BLUE, f'[Tool: {function_call["name"]}]: '),
+                    ('', f'{chatbot_message.strip()}')
+                ])
+                print_formatted_text(bot_msg)
+            else:
+                text_response = client.get_text_response()
+                bot_msg = FormattedText([
+                    (f'{Color.GREEN} {Color.BOLD}', 'd[o_0]b'),
+                    (Color.BLUE, '[Tool: None]: '),
+                    ('', f'{text_response.strip()}')
+                ])
+                print_formatted_text(bot_msg)
+
+        except KeyboardInterrupt:
+            print()
+            continue
+        except EOFError:
             break
-
-        client.generate_content(user_input, function_execution_result=None)
-
-        function_call = client.get_function_call()
-        if function_call:
-            print(f"{Color.GREEN}{Color.BOLD}d[o_0]b{Color.BLUE}[Tool: None]:{Color.END} I am gonna call {function_call['name']} tool with arguments: {json.dumps(function_call['arguments'])}")
-            result = get_current_weather(**function_call["arguments"])
-            client.generate_content(user_input=None, function_execution_result=result)
-            chatbot_message = client.get_text_response()
-            print(f"{Color.GREEN}{Color.BOLD}d[o_0]b{Color.BLUE}[Tool: {function_call["name"]}]:{Color.END} {chatbot_message}".strip())
-        else:
-            text_response = client.get_text_response()
-            chatbot_message = f"{text_response}".strip()
-            print(f"{Color.GREEN}{Color.BOLD}d[o_0]b{Color.BLUE}[Tool: None]:{Color.END} {chatbot_message}".strip())
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Multi-model Chatbot with Function Calling")
