@@ -1,3 +1,5 @@
+![Chatbot Demo](chatbot.gif)
+
 # Multimodel Function Calling Chatbot
 
 This project demonstrates function calling with large language models, supporting both Google's Gemini API and local models (Gemma3) via Ollama. The Python script creates a simple chatbot that can retrieve the current weather for a given location by using a custom function, showcasing the flexibility of a strategy-based design.
