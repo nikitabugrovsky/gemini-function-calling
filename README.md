@@ -1,6 +1,6 @@
 # Multimodel Function Calling Chatbot
 
-This project demonstrates function calling with large language models, supporting both Google's Gemini API and local models via Ollama. The Python script creates a simple chatbot that can retrieve the current weather for a given location by using a custom function, showcasing the flexibility of a strategy-based design.
+This project demonstrates function calling with large language models, supporting both Google's Gemini API and local models (Gemma3) via Ollama. The Python script creates a simple chatbot that can retrieve the current weather for a given location by using a custom function, showcasing the flexibility of a strategy-based design.
 
 ## How it Works
 
@@ -28,17 +28,22 @@ When the chatbot runs, it uses the selected client to send the user's prompt to 
 
 A significant enhancement to this project is the implementation of a two-step process for function calls. This ensures that the chatbot not only executes the requested function but also provides a more natural and human-readable response based on the function's output.
 
-Here’s how it works:
-
-1.  **Initial API Call:** The user's input is sent to the Gemini model. The model determines if a function call is needed to fulfill the request.
-
-2.  **Function Execution:** If the model decides to call a function (e.g., `get_current_weather`), the chatbot executes the function with the provided arguments and captures the result.
-
-3.  **Second API Call:** The result of the function call is then sent back to the Gemini model in a second API call.
-
-4.  **Human-Readable Output:** The model processes the function's result and generates a final, user-friendly response. For example, instead of just printing the raw weather data, the chatbot will now say something like, "The current temperature in New York is 25°C."
-
 This two-step process creates a more interactive and intuitive user experience. This workflow is a practical example of a pattern known as **Retrieval Augmented Generation (RAG)**. While RAG is often associated with retrieving data from static documents, our implementation uses a live API call for retrieval. In this context, **Function Calling is the mechanism that enables this specific, real-time implementation of the RAG pattern.**
+
+## Enhanced User Interface with `prompt-toolkit`
+
+To provide a more robust and user-friendly command-line experience, this project uses the `prompt-toolkit` library instead of Python's built-in `input()` function.
+
+### The Problem with Basic Input
+The standard `input()` function is very limited and cannot handle special terminal commands, such as those sent by arrow keys. This results in strange characters like `^[[A` appearing in the terminal when you try to use arrow keys to edit your input.
+
+### The Solution
+By integrating `prompt-toolkit`, the chatbot now features a much more powerful input prompt that supports:
+- **Cursor Navigation:** Arrow keys (left, right) work as expected for editing text.
+- **Command History:** You can cycle through your previous messages using the up and down arrow keys.
+- **Graceful Exit:** Handles `Ctrl+C` and `Ctrl+D` without crashing.
+
+This makes interacting with the chatbot a smoother and more intuitive experience.
 
 ## Dependencies
 
@@ -51,6 +56,7 @@ The required Python libraries for the application are:
 *   `google-genai`: The official Python library for the Google AI SDK.
 *   `openai`: The library for the OpenAI API, used to connect to Gemini's OpenAI-compatible endpoint.
 *   `requests`: A simple, yet elegant, HTTP library for the weather tool.
+*   `prompt-toolkit`: A powerful library for building interactive command-line interfaces.
 
 ## Local Model Setup with Ollama
 
@@ -118,23 +124,6 @@ This separation ensures that the tool's implementation is centralized, while the
 It is important to understand that the function calling mechanism for Gemma models is fundamentally different from models with native tool-use capabilities. Gemma models perform function calling through a **structured prompting strategy**. This means the model is instructed to generate a specific JSON output within its text response when a tool is needed, which the client code must then parse to execute the function. This prompt-based method requires more explicit guidance, which is why the few-shot strategy is so effective.
 
 To solve the challenges of this approach, the `ollama_client.py` implements a powerful technique known as **few-shot prompting**. Instead of just providing a system prompt with instructions, we seed the model's conversation history with a complete, multi-step example of the desired interaction. This "teaches" the model the expected behavior through demonstration.
-
-The `OllamaClient` now initializes its history with the following sequence:
-
-1.  **System Prompt:** The base instructions for the assistant.
-2.  **Example 1: Handling a Greeting:**
-    *   **User:** "Hello"
-    *   **Assistant:** "Hello! How can I help you today?"
-    *   *This teaches the model to engage in conversation without immediately calling a tool.*
-3.  **Example 2: A Full, Multi-Turn Interaction:**
-    *   A user asks for the weather using a nickname ("The Big Apple").
-    *   The assistant correctly identifies the location and formats the `get_current_weather` tool call in JSON.
-    *   The client simulates receiving the weather data and feeding it back to the model for summarization.
-    *   The assistant provides a natural language summary ("The weather in New York is currently 55 degrees and cloudy.").
-    *   **Crucially**, the user asks a follow-up, partial question: "what is the temperature?".
-    *   The assistant correctly answers by referencing the previous tool output ("The current temperature is 55 degrees.").
-
-By providing these concrete examples, the model learns the nuances of when (and when not) to use its tools, how to summarize data, and how to answer follow-up questions. This makes the local model's function-calling capabilities far more reliable and robust.
 
 ## Conversation History: Sliding Window Strategy for Prompts
 
